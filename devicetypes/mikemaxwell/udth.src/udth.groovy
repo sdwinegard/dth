@@ -20,6 +20,9 @@
 
 metadata {
 	definition (name: "uDTH", namespace: "MikeMaxwell", author: "mike maxwell") {
+		
+	capability "Sensor"
+	capability "Actuator"
 		//inputs
 		capability "Switch"					//on, off
         capability "Lock"					//lock, unlock
