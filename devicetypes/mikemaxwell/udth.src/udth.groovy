@@ -2,6 +2,7 @@
 	Universal virtual DTH
   	Copyright 2016 Mike Maxwell
     
+    1.0.5.  2016-08-29  added sensor and actuator capabilities per Alex
     1.0.4	2016-05-21	added LUX capability
     1.0.3	2016-05-18	added optional auto off
     1.0.2	2016-05-15	ignore duplicate input requests
@@ -307,7 +308,7 @@ def localOff() {
 }
 
 def getVersion(){
-	return "1.0.4"
+	return "1.0."
 }
 
 //capture preference changes
