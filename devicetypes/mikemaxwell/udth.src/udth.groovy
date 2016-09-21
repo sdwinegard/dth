@@ -1,8 +1,11 @@
-/* 
+ /* 
 	Universal virtual DTH
   	Copyright 2016 Mike Maxwell
-    
-    1.0.5.  2016-08-29  added sensor and actuator capabilities per Alex
+
+	1.0.7	2016-09-22	added smoke, water and sound thanks Scott
+    					added not used option to each device tile
+                        fixed bug in illuminance not working
+    1.0.5	2016-08-29  added sensor and actuator capabilities per Alex
     1.0.4	2016-05-21	added LUX capability
     1.0.3	2016-05-18	added optional auto off
     1.0.2	2016-05-15	ignore duplicate input requests
@@ -20,12 +23,12 @@
 
 
 metadata {
-	definition (name: "uDTH", namespace: "MikeMaxwell", author: "mike maxwell") {
+		definition (name: "uDTH", namespace: "MikeMaxwell", author: "mike maxwell") {
 		
-	capability "Sensor"
-	capability "Actuator"
+	    capability "Sensor"
+	    capability "Actuator"
 		//inputs
-		capability "Switch"					//on, off
+	    capability "Switch"					//on, off
         capability "Lock"					//lock, unlock
         
         //outputs
@@ -34,6 +37,9 @@ metadata {
         capability "Presence Sensor"		//"present", "not present"
         capability "Acceleration Sensor"	//"active", "inactive"
         capability "Illuminance Measurement"
+        capability "Smoke Detector"    //"detected", "clear", "tested"
+        capability "Water Sensor"      //"dry", "wet"
+        capability "Sound Sensor"      //"detected", "not detected"
         
         //both
         capability "Door Control"			//listen for "open", "close" respond with "open" "closed"
@@ -51,7 +57,7 @@ metadata {
         def d
         //paragraph input
         input(
-        	title			: "uDTH version: ${getVersion()}"
+            title			: "uDTH version: ${getVersion()}"
             ,description	: null
             ,type			: "paragraph"
         )
@@ -109,7 +115,7 @@ metadata {
            	,title			: buildTitle(d,s1,s2)
            	,type			: "enum"
            	,options		: buildOptions(d,s1,s2)
-           	,description	: contactOn ?: "Not Used, Tap to enable..."
+           	,description	: contactOn ?: "Not Used"
         )        
 
 		d = "Motion"
@@ -120,9 +126,42 @@ metadata {
             ,title			: buildTitle(d,s1,s2)
             ,type			: "enum"
             ,options		: buildOptions(d,s1,s2)
-            ,description	: motionOn ?: "Not Used, Tap to enable..."            
+            ,description	: motionOn ?: "Not Used"            
         )
         
+        d = "Smoke"
+        s1 = "detected"
+        s2 = "clear"
+		input( 
+        	name			: "smokeOn"
+            ,title			: buildTitle(d,s1,s2)
+            ,type			: "enum"
+            ,options		: buildOptions(d,s1,s2)
+            ,description	: smokeOn ?: "Not Used"            
+        )
+        
+        d = "Water"
+        s1 = "wet"
+        s2 = "dry"
+		input( 
+        	name			: "waterOn"
+            ,title			: buildTitle(d,s1,s2)
+            ,type			: "enum"
+            ,options		: buildOptions(d,s1,s2)
+            ,description	: waterOn ?: "Not Used"            
+        )
+        
+        d = "Sound"
+        s1 = "detected"
+        s2 = "not detected"
+		input( 
+        	name			: "soundOn"
+            ,title			: buildTitle(d,s1,s2)
+            ,type			: "enum"
+            ,options		: buildOptions(d,s1,s2)
+            ,description	: soundOn ?: "Not Used, Tap to enable..."            
+        )
+    
         d = "Presence"
         s1 = "present"
         s2 = "not present"
@@ -131,7 +170,7 @@ metadata {
             ,title			: buildTitle(d,s1,s2)
             ,type			: "enum"
           	,options		: buildOptions(d,s1,s2)
-            ,description	: presenceOn ?: "Not Used, Tap to enable..." 
+            ,description	: presenceOn ?: "Not Used" 
         )
         
         d = "Door"
@@ -142,7 +181,7 @@ metadata {
             ,title			: buildTitle(d,s1,s2)
             ,type			: "enum"
             ,options		: buildOptions(d,s1,s2)
-            ,description	: doorOn ?: "Not Used, Tap to enable..." 
+            ,description	: doorOn ?: "Not Used" 
         )
         d = "Acceleration"
         s1 = "active"
@@ -152,7 +191,7 @@ metadata {
             ,title			: buildTitle(d,s1,s2)
             ,type			: "enum"
           	,options		: buildOptions(d,s1,s2)
-            ,description	: accelOn ?: "Not Used, Tap to enable..."  
+            ,description	: accelOn ?: "Not Used"
         )
         d = "Illuminance"
         s1 = "0 Lux"
@@ -162,7 +201,7 @@ metadata {
             ,title			: buildTitle(d,s1,s2)
             ,type			: "enum"
           	,options		: buildOptions(d,s1,s2)
-            ,description	: accelOn ?: "Not Used, Tap to enable..."  
+            ,description	: luxOn ?: "Not Used"
         )        
     }
   
@@ -179,23 +218,38 @@ metadata {
         }
 		standardTile("contact", "device.contact", inactiveLabel: false, height:2, width:2, canChangeIcon: false) {
         	state "default", label:"contact\nnot used" //, backgroundColor: "#ffffff" 
-            state "closed", label:'${name}', backgroundColor: "#53a7c0", icon:"st.contact.contact.closed" 
-            state "open", label:'${name}', backgroundColor: "#e6971b", icon:"st.contact.contact.open" 
+            state "closed", label:'${name}', backgroundColor: "#ffffff", icon:"st.contact.contact.closed" 
+            state "open", label:'${name}', backgroundColor: "#53a7c0", icon:"st.contact.contact.open" 
 		}
         standardTile("motion", "device.motion", inactiveLabel: false, height:2, width:2, canChangeIcon: false) {
             state "default", label: "motion\nnot used" //, icon:"st.motion.motion.inactive"
             state "inactive", label:'${name}', backgroundColor: "#ffffff", icon:"st.motion.motion.inactive" 
             state "active", label:'${name}', backgroundColor: "#53a7c0", icon:"st.motion.motion.active" 
         }
-           standardTile("present", "device.presence", inactiveLabel: false, height:2, width:2, canChangeIcon: false) {
+        standardTile("smoke", "device.smoke", inactiveLabel: false, height:2, width:2, canChangeIcon: false) {
+            state "default", label: "smoke\nnot used" //, icon:"st.alarm.smoke.clear"
+            state "clear", label:'${name}', backgroundColor: "#ffffff", icon:"st.alarm.smoke.clear" 
+            state "detected", label:'${name}', backgroundColor: "#e86d13", icon:"st.alarm.smoke.smoke" 
+        }
+        standardTile("water", "device.water", inactiveLabel: false, height:2, width:2, canChangeIcon: false) {
+            state "default", label: "water\nnot used" //, icon:"st.alarm.water.dry"
+            state "dry", label:'${name}', backgroundColor: "#ffffff", icon:"st.alarm.water.dry" 
+            state "wet", label:'${name}', backgroundColor: "#53a7c0", icon:"st.alarm.water.wet" 
+        }
+        standardTile("sound", "device.sound", inactiveLabel: false, height:2, width:2, canChangeIcon: false) {
+            state "default", label: "sound\nnot used" //, icon:"st.quirky.spotter.quirky-spotter-sound-off"
+            state "not detected", label:'${name}', backgroundColor: "#ffffff", icon:"st.quirky.spotter.quirky-spotter-sound-off" 
+            state "detected", label:'${name}', backgroundColor: "#53a7c0", icon:"st.quirky.spotter.quirky-spotter-sound-on" 
+        }
+        standardTile("present", "device.presence", inactiveLabel: false, height:2, width:2, canChangeIcon: false) {
             state "default", label: "presence\nnot used"
             state "not present", label:'${name}', backgroundColor: "#ffffff", icon:"st.presence.tile.presence-default" 
             state "present", label:'${name}', backgroundColor: "#53a7c0", icon:"st.presence.tile.presence-default" 
         }
         standardTile("door", "device.door", inactiveLabel: false, height:2, width:2, canChangeIcon: false) {
             state "default", label: "door\nnot used" 
-            state "closed", label:'${name}', backgroundColor: "#53a7c0", icon:"st.doors.garage.garage-closed" 
-            state "open", label:'${name}', backgroundColor: "#e6971b", icon:"st.doors.garage.garage-open" 
+            state "closed", label:'${name}', backgroundColor: "#ffffff", icon:"st.doors.garage.garage-closed" 
+            state "open", label:'${name}', backgroundColor: "#53a7c0", icon:"st.doors.garage.garage-open" 
         }
         standardTile("accel", "device.acceleration", inactiveLabel: false, height:2, width:2, canChangeIcon: false) {
             state "default", label: "acceleration\nnot used"
@@ -205,10 +259,10 @@ metadata {
         standardTile("lux", "device.lux", inactiveLabel: false, height:2, width:2, canChangeIcon: false) {
             state "default", label: "illuminance\nnot used"
             state "dark", label:'${name}', backgroundColor: "#ffffff", icon:"st.illuminance.illuminance.dark" 
-            state "bright", label:'${name}', backgroundColor: "#53a7c0", icon:"st.illuminance.illuminance.bright" 
+            state "bright", label:'${name}', backgroundColor: "#ecf23a", icon:"st.illuminance.illuminance.bright" 
         }
         main(["switch"])
-        details(["switch","contact","motion","present","door","accel","lux"])
+        details(["switch","contact","motion","smoke","water","sound","present","door","accel","lux"])
  	}
 }
 
@@ -246,33 +300,46 @@ def buildOptions(d,s1,s2){
 	def options = []
     options.add(["1":"when ${sOn} set ${d} to '${s1}'\nwhen ${sOff} set ${d} to '${s2}'"])
     options.add(["0":"when ${sOn} set ${d} to '${s2}'\nwhen ${sOff} set ${d} to '${s1}'"])
+    options.add(["-1":"Not Used"])
 	return options
 }
 
 def syncDevices(cmd){
 	if (cmd == null) cmd = device.currentValue("uDTH") == "on" ? "1" : "0"
     //log.debug "cmd: ${cmd}"
-	if (contactOn != null){
+	if (contactOn in ["0","1"]){
 		if (contactOn == cmd) sendEvent(name: "contact", value: "open")			//"when on send 'open'\nwhen off send 'closed'"
         else sendEvent(name: "contact", value: "closed")						//"when on send 'closed'\nwhen off send 'open'"
     } else sendEvent(name: "contact", value: null, displayed	: false)
-	if (motionOn != null){
+	if (motionOn in ["0","1"]){
 		if (motionOn == cmd) sendEvent(name: "motion", value: "active")			//"when on send 'active'\nwhen off send 'inactive'"
         else sendEvent(name: "motion", value: "inactive")						//"when on send 'inactive'\nwhen off send 'active'"
     } else sendEvent(name: "motion", value: null, displayed	: false)
-	if (presenceOn != null){
+    if (smokeOn in ["0","1"]){
+		if (smokeOn == cmd) sendEvent(name: "smoke", value: "detected")			//"when on send 'detected'\nwhen off send 'clear'"
+        else sendEvent(name: "smoke", value: "clear")						//"when on send 'clear'\nwhen off send 'detected'"
+    } else sendEvent(name: "smoke", value: null, displayed	: false)
+    if (waterOn in ["0","1"]){
+		if (waterOn == cmd) sendEvent(name: "water", value: "wet")			//"when on send 'wet'\nwhen off send 'dry'"
+        else sendEvent(name: "water", value: "dry")						//"when on send 'dry'\nwhen off send 'wet'"
+    } else sendEvent(name: "water", value: null, displayed	: false)
+    if (soundOn in ["0","1"]){
+		if (soundOn == cmd) sendEvent(name: "sound", value: "detected")			//"when on send 'detected'\nwhen off send 'not detected'"
+        else sendEvent(name: "sound", value: "not detected")						//"when on send 'not detected'\nwhen off send 'detected'"
+    } else sendEvent(name: "sound", value: null, displayed	: false) 
+	if (presenceOn in ["0","1"]){
 		if (presenceOn == cmd) sendEvent(name: "presence", value: "present")		//"when on send 'present'\nwhen off send 'not present'"
         else sendEvent(name: "presence", value: "not present")					//"when on send 'not present'\nwhen off send 'present'"
     } else sendEvent(name: "presence", value: null, displayed	: false)
-	if (doorOn != null){
+	if (doorOn in ["0","1"]){
 		if (doorOn == cmd) sendEvent(name: "door", value: "open")			//"when on send 'active'\nwhen off send 'inactive'"
         else sendEvent(name: "door", value: "closed")						//"when on send 'inactive'\nwhen off send 'active'"
     } else sendEvent(name: "door", value: null, displayed	: false)
-	if (accelOn != null){
+	if (accelOn in ["0","1"]){
 		if (accelOn == cmd) sendEvent(name: "acceleration", value: "active")
         else sendEvent(name: "acceleration", value: "inactive")				
     } else sendEvent(name: "acceleration", value: null, displayed	: false)
-    if (luxOn != null){
+    if (luxOn in ["0","1"]){
     	if (luxOn == cmd){
         	sendEvent(name: "illuminance", value: 50)
         	sendEvent(name: "lux", value: "bright", displayed	: false)
@@ -308,7 +375,7 @@ def localOff() {
 }
 
 def getVersion(){
-	return "1.0."
+	return "1.0.7"
 }
 
 //capture preference changes
