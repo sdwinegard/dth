@@ -2,14 +2,13 @@
 	Universal virtual DTH
   	Copyright 2016 Mike Maxwell
 
-	1.0.7	2016-09-22	added smoke, water and sound thanks Scott
-    					added not used option to each device tile
-                        fixed bug in illuminance not working
-    1.0.5	2016-08-29  added sensor and actuator capabilities per Alex
+    1.0.7	2016-09-22	added smoke, water and sound thanks Scott added not used option to each device tile 
+    				fixed bug in illuminance not working
+    1.0.5	2016-08-29	added sensor and actuator capabilities per Alex
     1.0.4	2016-05-21	added LUX capability
     1.0.3	2016-05-18	added optional auto off
     1.0.2	2016-05-15	ignore duplicate input requests
-    					added version info
+    				added version info
 
 	This software if free for Private Use. You may use and modify the software without distributing it.
  
@@ -18,9 +17,7 @@
 	You may not grant a sublicense to modify and distribute this software to third parties not included in the license.
 
 	Software is provided without warranty and the software author/license owner cannot be held liable for damages.        
-
 */
-
 
 metadata {
 		definition (name: "uDTH", namespace: "MikeMaxwell", author: "mike maxwell") {
